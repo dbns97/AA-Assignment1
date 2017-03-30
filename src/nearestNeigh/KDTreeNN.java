@@ -10,6 +10,9 @@ import java.util.List;
  */
 public class KDTreeNN implements NearestNeigh{
 
+    // The root node of the tree
+    private KDNode root = null;
+
     @Override
     public void buildIndex(List<Point> points) {
         // To be implemented.
