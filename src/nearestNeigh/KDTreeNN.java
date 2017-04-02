@@ -17,19 +17,23 @@ public class KDTreeNN implements NearestNeigh{
     private KDTreeNN right = null;
 
     // Axis to sort on
-    private char axis;
+    private Axis axis;
 
     public void KDTreeNN() {
-        this.axis = 'x';
+        this.axis = X;
     }
 
-    public void KDTreeNN(char axis) {
+    public void KDTreeNN(Axis axis) {
         this.axis = axis;
     }
 
+    /**
+     * @description method to build the KD Tree from the provided points
+     * @param points the List of points
+     * @return void
+     **/
     @Override
     public void buildIndex(List<Point> points) {
-        // To be implemented.
         points = sort(points);
 
         // Find hte median point
@@ -37,7 +41,7 @@ public class KDTreeNN implements NearestNeigh{
         point = points.get(middle);
 
         // Get the sort axis for the next layer down
-        char nextAxis = (axis == 'x') ? 'y' : 'x';
+        Axis nextAxis = (axis == X) ? Y : X;
 
         // Build the left tree
         List<Point> leftList = points.subList(0, median);
@@ -58,12 +62,28 @@ public class KDTreeNN implements NearestNeigh{
     @Override
     public List<Point> search(Point searchTerm, int k) {
         // To be implemented.
+
+        List<Point> results = new ArrayList(k);
+
+        if (axis == X) {
+
+        } else if (axis == Y) {
+
+        }
+
         return new ArrayList<Point>();
     }
 
     @Override
     public boolean addPoint(Point point) {
         // To be implemented.
+
+        if (axis == X) {
+            
+        } else if (axis == Y) {
+
+        }
+
         return false;
     }
 
@@ -88,7 +108,7 @@ public class KDTreeNN implements NearestNeigh{
      **/
     private List<Point> sort(List<Point> points) {
 
-        if (axis == 'x') {
+        if (axis == X) {
 
             // Sort the provided list by latitude
             for (int i = 0; i < points.size(); i++) {
@@ -101,7 +121,7 @@ public class KDTreeNN implements NearestNeigh{
                 }
             }
 
-        } else if (axis == 'y') {
+        } else if (axis == Y) {
 
             // Sort the provided list by longitude
             for (int i = 0; i < points.size(); i++) {
