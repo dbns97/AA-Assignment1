@@ -10,10 +10,12 @@ import java.util.List;
  */
 public class NaiveNN implements NearestNeigh{
 
+    List<Point> index;
+
     @Override
     public void buildIndex(List<Point> points) {
         // To be implemented.
-        list<Point> index = new List<Point>();
+        
         for ( int i = 0; i < points.size(); i++ )
         {
             index.add( points.get(i) ) ;
@@ -28,12 +30,12 @@ public class NaiveNN implements NearestNeigh{
 
         for ( int j = 0; j < k; j++)
         {
-            closestDist = searchTerm.distTo( index<j> );
-            for(int i=0; i < index.size(); i++)
+            closestDist = searchTerm.distTo( index.get(j) );
+            for( int i=0; i < index.size(); i++ )
             {
-                if( searchTerm.distTo( index<i> ) < closestDist )
+                if( searchTerm.distTo( index.get(i) ) < closestDist )
                 {
-                    closestPoints.add( index<i> );
+                    closestPoints.add( index.get(i) );
                 }
             }
         }
@@ -46,7 +48,7 @@ public class NaiveNN implements NearestNeigh{
         // To be implemented.
         for(int i=0; i < index.size(); i++)
         {
-            if( point.equals(index<i>) )
+            if( point.equals(index.get(i)) )
             {
                 return false;
             }
@@ -62,9 +64,9 @@ public class NaiveNN implements NearestNeigh{
         // To be implemented.
         for(int i=0; i < index.size(); i++)
         {
-            if( point.equals(index<i>) )
+            if( point.equals(index.get(i)) )
             {
-                index.remove(i)
+                index.remove(i);
                 return true;
             }
         }
@@ -76,7 +78,7 @@ public class NaiveNN implements NearestNeigh{
         // To be implemented.
         for(int i=0; i < index.size(); i++)
         {
-            if( point.equals(index<i>) )
+            if( point.equals(index.get(i)) )
             {
                 return true;
             }
