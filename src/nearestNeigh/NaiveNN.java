@@ -10,7 +10,7 @@ import java.util.List;
  */
 public class NaiveNN implements NearestNeigh{
 
-    List<Point> index;
+    List<Point> index = new ArrayList<Point>();
 
     @Override
     public void buildIndex(List<Point> points) {
@@ -23,21 +23,42 @@ public class NaiveNN implements NearestNeigh{
     }
 
     @Override
-    public List<Point> search(Point searchTerm, int k) {
-        // To be implemented.
-        ArrayList<Point> closestPoints = new ArrayList<Point>();
+    public List<Point> search(Point searchTerm, int k) 
+    {
+        List<Point> closestPoints = new ArrayList<Point>();
         double closestDist;
-
-        for ( int j = 0; j < k; j++)
+        int listIndex;
+           
+        while ( closestPoints.size() < k )
         {
-            closestDist = searchTerm.distTo( index.get(j) );
+            listIndex = 0;
+            closestDist = searchTerm.distTo( index.get(0) );
+            
+            // search list for smallest distance 
             for( int i=0; i < index.size(); i++ )
             {
-                if( searchTerm.distTo( index.get(i) ) < closestDist )
+                if( searchTerm.cat == index.get(i).cat )
                 {
-                    closestPoints.add( index.get(i) );
+                    if( searchTerm.distTo( index.get(i) ) < closestDist )
+                    {
+                        closestDist = searchTerm.distTo( index.get(i) );
+                        listIndex = i;
+                    }
                 }
+                
             }
+            
+            // add to return array
+            closestPoints.add( index.get( listIndex ) );
+            // remove the smallest from list it isnt compared anymore
+            index.remove( listIndex );
+            
+        }
+        
+        // re add the removed items
+        for( int i=0; i < closestPoints.size(); i++ )
+        {
+            index.add( closestPoints.get(i) );
         }
         
         return closestPoints;
