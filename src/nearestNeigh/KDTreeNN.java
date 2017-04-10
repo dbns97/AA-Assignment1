@@ -129,6 +129,8 @@ public class KDTreeNN implements NearestNeigh{
     @Override
     public boolean deletePoint(Point point) {
         KDNode currentNode = root;
+        KDNode parentNode = null;
+        String direction = null;
 
         while (currentNode != null) {
 
@@ -141,13 +143,23 @@ public class KDTreeNN implements NearestNeigh{
             point.lat == currentPoint.lat &&
             point.lon == currentPoint.lon
             ) {
-                // TODO: delete point
-                //     : pick a branch and get it's leaf node
-                //     : delete the current ndoe and replace it with the leaf node
                 if (currentNode.getLeft() == null && currentNode.getRight() == null) {
-                    // Delete node (and delete parent's pointer to it)
+                    // Node is leaf. Delete parent's pointer to it
+                    if (direction.equals("left")) {
+                        parentNode.setLeft(null);
+                    } else {
+                        parentNode.setRight(null);
+                    }
                 } else {
-                    KDNode replacement = getInnerLeaf(currentNode);
+                    // Node is not leaf. Must replace with inner leaf
+                    KDNode replacement = getInnerLeaf(currentNode, parentNode, direction);
+                    if (direction.equals("left")) {
+                        parentNode.setLeft(replacement);
+                    } else {
+                        parentNode.setRight(replacement);
+                    }
+                    replacement.setLeft(currentNode.getLeft());
+                    replacement.setRight(currentNode.getRight());
                 }
                 return true;
             }
@@ -166,6 +178,8 @@ public class KDTreeNN implements NearestNeigh{
                     System.out.println("Could not delete point, point does not exist.");
                     return false;
                 } else {
+                    direction = "left";
+                    parentNode = currentNode;
                     currentNode = currentNode.getLeft();
                 }
             } else {
@@ -174,6 +188,8 @@ public class KDTreeNN implements NearestNeigh{
                     System.out.println("Could not delete point, point does not exist.");
                     return false;
                 } else {
+                    direction = "right";
+                    parentNode = currentNode;
                     currentNode = currentNode.getRight();
                 }
             }
