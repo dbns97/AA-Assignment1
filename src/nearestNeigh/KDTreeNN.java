@@ -32,13 +32,13 @@ public class KDTreeNN implements NearestNeigh{
      * @param axis the axis to sort on at this node
      * @return KDNode the node that has been created
      **/
-    private KDNode setNode(List<Point> points, Axis axis, KDNode parent) {
+    private KDNode setNode(List<Point> points, Axis axis, KDNode parent, String branch) {
         // Sort the list of points on the supplied axis
         points = sort(points, axis);
 
         // Find the median point and initialise the node
         int median = (int) Math.floor(points.size() / 2);
-        KDNode node = new KDNode(points.get(median), axis, null, null, parent);
+        KDNode node = new KDNode(points.get(median), axis, null, null, parent, branch);
 
         // Set axis for next layer of the tree
         Axis nextAxis = (axis == Axis.X) ? Axis.Y : Axis.X;
@@ -48,8 +48,8 @@ public class KDTreeNN implements NearestNeigh{
         List<Point> rightPoints = points.subList(median + 1, points.size());
 
         // Set the left and right nodes
-        if (leftPoints.size() > 0) node.setLeft(setNode(leftPoints, nextAxis));
-        if (rightPoints.size() > 0) node.setRight(setNode(rightPoints, nextAxis));
+        if (leftPoints.size() > 0) node.setLeft(setNode(leftPoints, nextAxis, node, Branch.LEFT));
+        if (rightPoints.size() > 0) node.setRight(setNode(rightPoints, nextAxis, node, Branch.RIGHT));
 
         return node;
     }
@@ -63,10 +63,42 @@ public class KDTreeNN implements NearestNeigh{
     @Override
     public List<Point> search(Point searchTerm, int k) {
         ArrayList<Point> nearestPoints = new ArrayList<Point>(k);
+        for (int i = 0; i < k; i++) {
+            nearestPoints.add(null);
+        }
 
-        nearestPoints.add(getNearestLeaf(searchTerm));
+        // Main body of method
+        //////////////////////
+        KDNode leafNode = getNearestLeaf(searchTerm);
+        double leafDist = getManhattanDist(searchTerm, leafNode.getPoint());
+        nearestPoints.add(0, leafNode.getPoint());
 
-        
+        // TODO: This "loop" is just pseudo code because what is inside will need to be looped somehow
+        loop {
+            KDNode currentNode = leafNode.getParent();
+
+            // Check if we need to check other branch
+            if (nearestPoints.get(k - 1) == null || getAxisDist(searchTerm, currentNode) < getManhattanDist(searchTerm, nearestPoints.get(k - 1))) {
+                if (leafNode.getBranch() == Branch.LEFT && currentNode.getRight() != null) {
+                    /*
+                        - search down the opposite branch until nearest leaf
+                        - then repeat the process that we've already done
+                    */
+                } else if (leafNode.getBranch() == Branch.RIGHT && currentNode.getLeft() != null){
+                    /*
+                        - search down the opposite branch until nearest leaf
+                        - then repeat the process that we've already done
+                    */
+                } else {
+                    /*
+                        - don't need to check other branch
+                        (if nearestPoints contains nulls then add currentNode. Maybe always check whether to add currentNode)
+                    */
+                }
+            }
+        }
+
+        //////////////////////
 
         return nearestPoints;
     }
@@ -361,6 +393,35 @@ public class KDTreeNN implements NearestNeigh{
                     currentNode = currentNode.getRight();
                 }
             }
+        }
+    }
+
+    private ArrayList<Point> sortNearest(Point searchTerm, ArrayList<Point> points) {
+        // Sort the provided list by distance from searchTerm
+        for (int i = 0; i < points.size(); i++) {
+            for (int j = 0; j < points.size() - 1; j++) {
+                // Calculate distances of the current point and the next point
+                double pointDist = getDist(searchTerm, points.get(j));
+                double nextPointDist = getDist(searchTerm, points.get(j+1));
+                if (pointDist > nextPointDist) {
+                    Point temp = points.get(j);
+                    points.set(j, points.get(j+1));
+                    points.set(j+1, temp);
+                }
+            }
+        }
+        return points;
+    }
+
+    private double getManhattanDist(Point p1, Point p2) {
+        return Math.abs(p1.lat - p2.lat) + Math.abs(p1.lon - p2.lon);
+    }
+
+    private double getAxisDist(Point p, KDNode n) {
+        if (n.getAxis() == Axis.X) {
+            return Math.abs(p.lat - n.getPoint().lat);
+        } else {
+            return Math.abs(p.lon - n.getPoint().lon);
         }
     }
 

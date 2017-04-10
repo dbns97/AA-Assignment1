@@ -12,14 +12,17 @@ public class KDNode {
     private KDNode right = null;
     // The parent of this node
     private KDNode parent = null;
+    // The branch (left/right) that this node is in from its parent
+    private Branch branch = null;
 
     // Constructor
-    public KDNode(Point point, Axis axis, KDNode left, KDNode right, KDNode parent) {
+    public KDNode(Point point, Axis axis, KDNode left, KDNode right, KDNode parent, Branch branch) {
         this.point = point;
         this.axis = axis;
         this.left = left;
         this.right = right;
         this.parent = parent;
+        this.branch = branch;
     }
 
     /*---------- Getters ----------*/
@@ -38,6 +41,10 @@ public class KDNode {
 
     public KDNode getParent() {
         return parent;
+    }
+
+    public Branch getBranch() {
+        return branch;
     }
 
     public Axis getAxis() {
