@@ -23,7 +23,7 @@ public class KDTreeNN implements NearestNeigh{
      **/
     @Override
     public void buildIndex(List<Point> points) {
-        root = setNode(points, Axis.X);
+        root = setNode(points, Axis.X, null);
     }
 
     /**
@@ -32,13 +32,13 @@ public class KDTreeNN implements NearestNeigh{
      * @param axis the axis to sort on at this node
      * @return KDNode the node that has been created
      **/
-    private KDNode setNode(List<Point> points, Axis axis) {
+    private KDNode setNode(List<Point> points, Axis axis, KDNode parent) {
         // Sort the list of points on the supplied axis
         points = sort(points, axis);
 
         // Find the median point and initialise the node
         int median = (int) Math.floor(points.size() / 2);
-        KDNode node = new KDNode(points.get(median), axis, null, null);
+        KDNode node = new KDNode(points.get(median), axis, null, null, parent);
 
         // Set axis for next layer of the tree
         Axis nextAxis = (axis == Axis.X) ? Axis.Y : Axis.X;
@@ -62,8 +62,13 @@ public class KDTreeNN implements NearestNeigh{
      **/
     @Override
     public List<Point> search(Point searchTerm, int k) {
-        // To be implemented.
-        return new ArrayList<Point>();
+        ArrayList<Point> nearestPoints = new ArrayList<Point>(k);
+
+        nearestPoints.add(getNearestLeaf(searchTerm));
+
+        
+
+        return nearestPoints;
     }
 
     /**
@@ -152,7 +157,7 @@ public class KDTreeNN implements NearestNeigh{
                     }
                 } else {
                     // Node is not leaf. Must replace with inner leaf
-                    KDNode replacement = getInnerLeaf(currentNode, parentNode, direction);
+                    KDNode replacement = getInnerLeaf(currentNode, direction);
                     if (direction.equals("left")) {
                         parentNode.setLeft(replacement);
                     } else {
@@ -321,12 +326,51 @@ public class KDTreeNN implements NearestNeigh{
     }
 
     /**
+     * @description Find the nearest leaf (first step of search)
+     * @param searchTerm the point to find nearest leaf to
+     * @return KDNode The nearest leaf node
+     **/
+    private KDNode getNearestLeaf(Point searchTerm)
+    {
+        KDNode currentNode = root;
+
+        while (currentNode != null) {
+
+            Point currentPoint = currentNode.getPoint();
+
+            // Find cutting axis and branch to go down
+            boolean goLeft;
+            if (currentNode.getAxis() == Axis.X) {
+                goLeft = (searchTerm.lat <= currentPoint.lat);
+            } else {
+                goLeft = (searchTerm.lon <= currentPoint.lon);
+            }
+
+            if (goLeft) {
+                // Determine if we are at a leaf node yet
+                if (currentNode.getLeft() == null) {
+                    return currentNode;
+                } else {
+                    currentNode = currentNode.getLeft();
+                }
+            } else {
+                // Determine if we are at a leaf node yet
+                if (currentNode.getRight() == null) {
+                    return currentNode;
+                } else {
+                    currentNode = currentNode.getRight();
+                }
+            }
+        }
+    }
+
+    /**
      * @description get one of the two inner-leafs from the tree where
      * the node provided is the root
      * @param root the root of the tree to get the leaf of
      * @return KDNode one of the two inner-leafs of the tree
      **/
-    private KDNode getInnerLeaf(KDNode root, KDNode parent, String direction) {
+    private KDNode getInnerLeaf(KDNode root, String direction) {
         String rootDirection;
         KDNode currentNode;
         KDNode parentNode = null;
@@ -341,9 +385,9 @@ public class KDTreeNN implements NearestNeigh{
         } else {
             // Delete the pointer to currentNode from parentNode
             if (direction.equals("right")) {
-                parent.setRight(null);
+                root.getParent().setRight(null);
             } else {
-                parent.setLeft(null);
+                root.getParent().setLeft(null);
             }
             return null;
         }

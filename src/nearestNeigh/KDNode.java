@@ -4,19 +4,22 @@ public class KDNode {
 
     // The point contained in this node
     private Point point = null;
-    // THe point to the left of this node
-    private KDNode left = null;
-    // THe point to the right of this node
-    private KDNode right = null;
     // The axis to split on at this node
     private Axis axis = null;
+    // The node to the left of this node
+    private KDNode left = null;
+    // The node to the right of this node
+    private KDNode right = null;
+    // The parent of this node
+    private KDNode parent = null;
 
     // Constructor
-    public KDNode(Point point, Axis axis, KDNode left, KDNode right) {
+    public KDNode(Point point, Axis axis, KDNode left, KDNode right, KDNode parent) {
         this.point = point;
         this.axis = axis;
         this.left = left;
         this.right = right;
+        this.parent = parent;
     }
 
     /*---------- Getters ----------*/
@@ -31,6 +34,10 @@ public class KDNode {
 
     public KDNode getRight() {
         return right;
+    }
+
+    public KDNode getParent() {
+        return parent;
     }
 
     public Axis getAxis() {
@@ -61,6 +68,10 @@ public class KDNode {
 
     public void setRight(KDNode node) {
         this.right = node;
+    }
+
+    public void setParent(KDNode node) {
+        this.parent = node;
     }
 
     public void setAxis(Axis axis) {
