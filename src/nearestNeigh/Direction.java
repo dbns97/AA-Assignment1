@@ -1,5 +1,5 @@
 package nearestNeigh;
 
-public enum Branch {
+public enum Direction {
     LEFT, RIGHT
 }

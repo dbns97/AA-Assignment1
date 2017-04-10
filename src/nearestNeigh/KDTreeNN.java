@@ -23,7 +23,7 @@ public class KDTreeNN implements NearestNeigh{
      **/
     @Override
     public void buildIndex(List<Point> points) {
-        root = setNode(points, Axis.X, null);
+        root = setNode(points, Axis.X, null, null);
     }
 
     /**
@@ -32,13 +32,13 @@ public class KDTreeNN implements NearestNeigh{
      * @param axis the axis to sort on at this node
      * @return KDNode the node that has been created
      **/
-    private KDNode setNode(List<Point> points, Axis axis, KDNode parent, String branch) {
+    private KDNode setNode(List<Point> points, Axis axis, KDNode parent, Direction direction) {
         // Sort the list of points on the supplied axis
         points = sort(points, axis);
 
         // Find the median point and initialise the node
         int median = (int) Math.floor(points.size() / 2);
-        KDNode node = new KDNode(points.get(median), axis, null, null, parent, branch);
+        KDNode node = new KDNode(points.get(median), axis, null, null, parent, direction);
 
         // Set axis for next layer of the tree
         Axis nextAxis = (axis == Axis.X) ? Axis.Y : Axis.X;
@@ -48,8 +48,8 @@ public class KDTreeNN implements NearestNeigh{
         List<Point> rightPoints = points.subList(median + 1, points.size());
 
         // Set the left and right nodes
-        if (leftPoints.size() > 0) node.setLeft(setNode(leftPoints, nextAxis, node, Branch.LEFT));
-        if (rightPoints.size() > 0) node.setRight(setNode(rightPoints, nextAxis, node, Branch.RIGHT));
+        if (leftPoints.size() > 0) node.setLeft(setNode(leftPoints, nextAxis, node, Direction.LEFT));
+        if (rightPoints.size() > 0) node.setRight(setNode(rightPoints, nextAxis, node, Direction.RIGHT));
 
         return node;
     }
@@ -67,6 +67,9 @@ public class KDTreeNN implements NearestNeigh{
             nearestPoints.add(null);
         }
 
+        return findNearest(root, searchTerm, nearestPoints);
+
+        /*
         // Main body of method
         //////////////////////
         KDNode leafNode = getNearestLeaf(searchTerm);
@@ -80,25 +83,77 @@ public class KDTreeNN implements NearestNeigh{
             // Check if we need to check other branch
             if (nearestPoints.get(k - 1) == null || getAxisDist(searchTerm, currentNode) < getManhattanDist(searchTerm, nearestPoints.get(k - 1))) {
                 if (leafNode.getBranch() == Branch.LEFT && currentNode.getRight() != null) {
-                    /*
-                        - search down the opposite branch until nearest leaf
-                        - then repeat the process that we've already done
-                    */
+                    // - search down the opposite branch until nearest leaf
+                    // - then repeat the process that we've already done
                 } else if (leafNode.getBranch() == Branch.RIGHT && currentNode.getLeft() != null){
-                    /*
-                        - search down the opposite branch until nearest leaf
-                        - then repeat the process that we've already done
-                    */
+                    // - search down the opposite branch until nearest leaf
+                    // - then repeat the process that we've already done
                 } else {
-                    /*
-                        - don't need to check other branch
-                        (if nearestPoints contains nulls then add currentNode. Maybe always check whether to add currentNode)
-                    */
+                    // - don't need to check other branch
+                    // (if nearestPoints contains nulls then add currentNode. Maybe always check whether to add currentNode)
                 }
             }
         }
 
         //////////////////////
+        */
+    }
+
+    /**
+     * @description Recursive method to find the nearest points at each point (where each point is the root of its own tree)
+     * @param currentNode the starting node for this iteration
+     * @param searchTerm the point that's nearest points are being searched for
+     * @param nearestPoints the current state of the nearestPoints list
+     * @return ArrayList<Point> the updated nearestPoints list
+     **/
+    private ArrayList<Point> findNearest(KDNode currentNode, Point searchTerm, ArrayList<Point> nearestPoints) {
+
+        // Calculate the direction to go down
+        Direction direction;
+        if (currentNode.getAxis() == Axis.X) {
+            direction = (searchTerm.lat <= currentNode.getPoint().lat) ? Direction.LEFT : Direction.RIGHT;
+        } else {
+            direction = (searchTerm.lon <= currentNode.getPoint().lon) ? Direction.LEFT : Direction.RIGHT;
+        }
+
+        // Store the next node and the other node based on the direction
+        KDNode nextNode = (direction == Direction.LEFT) ? currentNode.getLeft() : currentNode.getRight();
+        KDNode otherNode = (direction == Direction.LEFT) ? currentNode.getRight() : currentNode.getLeft();
+
+        // Check if we are at a leaf node
+        if (nextNode == null) {
+            // If we are at a leaf node, add it to the nearestPoints list
+            nearestPoints.set(0, currentNode);
+        } else {
+            // Recurse on this function for the next node
+            nearestPoints = findNearest(nextNode, searchTerm, nearestPoints);
+        }
+
+        // Sort the existing list of nearest points (need to always know which is the furthest in this list)
+        nearestPoints = sortNearest(searchTerm, nearestPoints);
+
+        // Get the distance from the current point to the search point
+        double currentPointDist = getManhattanDist(currentNode.getPoint(), searchTerm);
+        // Get the distance from the furthest point currently in nearestPoints to the search point
+        double lastNearestPointDist = getManhattanDist(nearestPoints.get(nearestPoints.size() - 1), searchTerm);
+        // If current point is closer, swap it into the nearestPoints list
+        if (currentPointDist < lastNearestPointDist) {
+            nearestPoints.set(nearestPoints.size() - 1, currentNode.getPoint());
+        }
+
+        // Check if other branch has closer points
+        if (otherNode != null) {
+            // Get the distance along the cutting axis from current point to search point
+            double axisDist = getAxisDist(currentNode.getPoint(), searchTerm);
+            // Get the distance from the furthest point currently in nearestPoints to the search point
+            double lastNearestPointDist = getManhattanDist(nearestPoints.get(nearestPoints.size() - 1), searchTerm);
+            // Compare the two distances to determine whether we need to check the other branch
+            if (axisDist < lastNearestPointDist) {
+                // Check other branch for closer points
+                // TODO: not sure about this (do we just set nearestPoints to equal the return value from the other branch)
+                nearestPoints = findNearest(otherNode, searchTerm, nearestPoints);
+            }
+        }
 
         return nearestPoints;
     }
@@ -197,6 +252,9 @@ public class KDTreeNN implements NearestNeigh{
                     }
                     replacement.setLeft(currentNode.getLeft());
                     replacement.setRight(currentNode.getRight());
+                    replacement.setAxis(currentNode.getAxis());
+                    replacement.setParent(parentNode);
+                    replacement.setDirection(currentNode.getDirection());
                 }
                 return true;
             }
