@@ -1,11 +1,7 @@
 
-import nearestNeigh.Category;
-import nearestNeigh.Point;
-import nearestNeigh.KDTreeNN;
+import nearestNeigh.*;
 import java.io.*;
 import java.util.*;
-import nearestNeigh.NaiveNN;
-import nearestNeigh.NearestNeigh;
 
 /**
  * This is to be the main class when we run the program in file-based point.
