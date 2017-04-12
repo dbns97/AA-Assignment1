@@ -24,13 +24,6 @@ public class KDTreeNN implements NearestNeigh{
     @Override
     public void buildIndex(List<Point> points) {
         root = setNode(points, Axis.X, null, null);
-        // TESTING
-        List<Point> searchResults = search(new Point("idNEW", Category.RESTAURANT, 40, 150), 3);
-        System.out.println("--------");
-        for (int i = 0; i < searchResults.size(); i++) {
-            System.out.println(searchResults.get(i).id + ", Dist = " + searchResults.get(i).distTo(new Point("idNEW", Category.RESTAURANT, 40, 150)));
-        }
-        System.out.println("--------");
     }
 
     /**
@@ -74,7 +67,22 @@ public class KDTreeNN implements NearestNeigh{
             nearestPoints.add(null);
         }
 
-        return findNearest(root, searchTerm, nearestPoints);
+        nearestPoints = findNearest(root, searchTerm, nearestPoints);
+
+        // Remove any null points (if k is greater than number of points in tree)
+        int nullCount = 0;
+        for (int i = k - 1; i >= 0; i--) {
+            if (nearestPoints.get(i) == null) {
+                nearestPoints.remove(i);
+                nullCount++;
+            }
+        }
+
+        if (nullCount > 0) {
+            System.out.println("Can't return " + k + " nearest points. Returning " + (k - nullCount) + " instead.");
+        }
+
+        return nearestPoints;
     }
 
     /**
