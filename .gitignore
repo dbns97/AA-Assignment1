@@ -3,3 +3,4 @@
 **/Icon?
 *.class
 *.out
+**/OUT_*
