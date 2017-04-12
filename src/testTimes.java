@@ -40,7 +40,7 @@ public class testTimes
     {
 
       // start of program for run time
-      long startTime = System.nanoTime ( ) ;
+      double count = 1;
 
         // read command line arguments
         if (args.length != 4)
@@ -101,7 +101,8 @@ public class testTimes
             PrintWriter writer = new PrintWriter(outputFile);
 
             PrintWriter timeWriter = new PrintWriter(timeTakenFile);
-
+            long startTime = System.nanoTime ( ) ;
+            int debug = 1;
             // operating commands
             while (scanner.hasNext())
             {
@@ -114,6 +115,10 @@ public class testTimes
                 double lon;
                 int k;
                 Point point;
+
+System.out.println(debug);
+debug++;
+
                 switch (command)
                 {
                     // search
@@ -133,11 +138,10 @@ public class testTimes
 
                         long endSearchTime = System.nanoTime();
                         double estimatedSearchTime = ((double)(endSearchTime - startSearchTime)) / Math.pow(10, 9);
-                        System.out.println("search time taken = " + estimatedSearchTime + " sec");
 
-                        timeWriter.println("search time taken = " + estimatedSearchTime + " sec");
+                        timeWriter.println( estimatedSearchTime );
 
-
+                        count++;
                         break;
                     // add
                     case "A":
@@ -158,7 +162,7 @@ public class testTimes
                         System.out.println("add time taken = " + estimatedAddTime + " sec");
 
                         timeWriter.println("add time taken = " + estimatedAddTime + " sec");
-
+                        count++;
                         break;
                     // delete
                     case "D":
@@ -179,7 +183,7 @@ public class testTimes
                         System.out.println("delete time taken = " + estimatedDeleteTime + " sec");
 
                         timeWriter.println("delete time taken = " + estimatedDeleteTime + " sec");
-
+                        count++;
                         break;
                     // check
                     case "C":
@@ -198,23 +202,26 @@ public class testTimes
                         System.out.println("check time taken = " + estimatedCheckTime + " sec");
 
                         timeWriter.println("check time taken = " + estimatedCheckTime + " sec");
-
+                        count++;
                         break;
                     default:
                         System.err.println("Unknown command.");
                         System.err.println(command + " " + scanner.nextLine());
                 }
             }
+            long endTime = System.nanoTime();
+
             scanner.close();
             writer.close();
 
             // end time of programe
-            long endTime = System.nanoTime();
+
 
             double estimatedTime = ((double)(endTime - startTime)) / Math.pow(10, 9);
             System.out.println("Total time taken = " + estimatedTime + " sec");
 
-            timeWriter.println("Total time taken = " + estimatedTime + " sec");
+            timeWriter.println("Total time taken = " + estimatedTime + " sec\n");
+            timeWriter.println("average time taken :     \n" + (estimatedTime/count));
 
             timeWriter.close();
         }

@@ -1,4 +1,4 @@
-id0 education 36 119
+id0 education 4 66
 id2 education 83 100
 id4 education 73 93
 id6 education 59 104
