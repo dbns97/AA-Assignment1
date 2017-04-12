@@ -43,7 +43,7 @@ public class KDNode {
         return parent;
     }
 
-    public Branch getDirection() {
+    public Direction getDirection() {
         return direction;
     }
 
@@ -63,13 +63,13 @@ public class KDNode {
 
     public void setLeft(Point point) {
         Axis axis = (this.axis == Axis.X) ? Axis.Y : Axis.X;
-        KDNode node = new KDNode(point, axis, null, null);
+        KDNode node = new KDNode(point, axis, null, null, this, Direction.LEFT);
         this.left = node;
     }
 
     public void setRight(Point point) {
         Axis axis = (this.axis == Axis.X) ? Axis.Y : Axis.X;
-        KDNode node = new KDNode(point, axis, null, null);
+        KDNode node = new KDNode(point, axis, null, null, this, Direction.RIGHT);
         this.right = node;
     }
 

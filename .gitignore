@@ -2,3 +2,5 @@
 *.swp
 **/Icon?
 **/OLD_*
+*.class
+*.out

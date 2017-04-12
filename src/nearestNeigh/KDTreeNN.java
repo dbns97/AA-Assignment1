@@ -69,34 +69,6 @@ public class KDTreeNN implements NearestNeigh{
 
         return findNearest(root, searchTerm, nearestPoints);
 
-        /*
-        // Main body of method
-        //////////////////////
-        KDNode leafNode = getNearestLeaf(searchTerm);
-        double leafDist = getManhattanDist(searchTerm, leafNode.getPoint());
-        nearestPoints.add(0, leafNode.getPoint());
-
-        // TODO: This "loop" is just pseudo code because what is inside will need to be looped somehow
-        loop {
-            KDNode currentNode = leafNode.getParent();
-
-            // Check if we need to check other branch
-            if (nearestPoints.get(k - 1) == null || getAxisDist(searchTerm, currentNode) < getManhattanDist(searchTerm, nearestPoints.get(k - 1))) {
-                if (leafNode.getBranch() == Branch.LEFT && currentNode.getRight() != null) {
-                    // - search down the opposite branch until nearest leaf
-                    // - then repeat the process that we've already done
-                } else if (leafNode.getBranch() == Branch.RIGHT && currentNode.getLeft() != null){
-                    // - search down the opposite branch until nearest leaf
-                    // - then repeat the process that we've already done
-                } else {
-                    // - don't need to check other branch
-                    // (if nearestPoints contains nulls then add currentNode. Maybe always check whether to add currentNode)
-                }
-            }
-        }
-
-        //////////////////////
-        */
     }
 
     /**
@@ -107,6 +79,8 @@ public class KDTreeNN implements NearestNeigh{
      * @return ArrayList<Point> the updated nearestPoints list
      **/
     private ArrayList<Point> findNearest(KDNode currentNode, Point searchTerm, ArrayList<Point> nearestPoints) {
+
+        double lastNearestPointDist;
 
         // Calculate the direction to go down
         Direction direction;
@@ -123,7 +97,7 @@ public class KDTreeNN implements NearestNeigh{
         // Check if we are at a leaf node
         if (nextNode == null) {
             // If we are at a leaf node, add it to the nearestPoints list
-            nearestPoints.set(0, currentNode);
+            nearestPoints.set(0, currentNode.getPoint());
         } else {
             // Recurse on this function for the next node
             nearestPoints = findNearest(nextNode, searchTerm, nearestPoints);
@@ -132,26 +106,34 @@ public class KDTreeNN implements NearestNeigh{
         // Sort the existing list of nearest points (need to always know which is the furthest in this list)
         nearestPoints = sortNearest(searchTerm, nearestPoints);
 
-        // Get the distance from the current point to the search point
-        double currentPointDist = searchTerm.distTo(currentNode.getPoint());
-        // Get the distance from the furthest point currently in nearestPoints to the search point
-        double lastNearestPointDist = searchTerm.distTo(nearestPoints.get(nearestPoints.size() - 1));
-        // If current point is closer, swap it into the nearestPoints list
-        if (currentPointDist < lastNearestPointDist) {
+        if (nearestPoints.get(nearestPoints.size() - 1) == null) {
             nearestPoints.set(nearestPoints.size() - 1, currentNode.getPoint());
+        } else {
+            // Get the distance from the current point to the search point
+            double currentPointDist = searchTerm.distTo(currentNode.getPoint());
+            // Get the distance from the furthest point currently in nearestPoints to the search point
+            lastNearestPointDist = searchTerm.distTo(nearestPoints.get(nearestPoints.size() - 1));
+            // If current point is closer, swap it into the nearestPoints list
+            if (currentPointDist < lastNearestPointDist) {
+                nearestPoints.set(nearestPoints.size() - 1, currentNode.getPoint());
+            }
         }
 
         // Check if other branch has closer points
         if (otherNode != null) {
-            // Get the distance along the cutting axis from current point to search point
-            double axisDist = getAxisDist(currentNode.getPoint(), searchTerm);
-            // Get the distance from the furthest point currently in nearestPoints to the search point
-            double lastNearestPointDist = searchTerm.distTo(nearestPoints.get(nearestPoints.size() - 1));
-            // Compare the two distances to determine whether we need to check the other branch
-            if (axisDist < lastNearestPointDist) {
-                // Check other branch for closer points
-                // TODO: not sure about this (do we just set nearestPoints to equal the return value from the other branch)
+            if (nearestPoints.get(nearestPoints.size() - 1) == null) {
                 nearestPoints = findNearest(otherNode, searchTerm, nearestPoints);
+            } else {
+                // Get the distance along the cutting axis from current point to search point
+                double axisDist = getAxisDist(searchTerm, currentNode);
+                // Get the distance from the furthest point currently in nearestPoints to the search point
+                lastNearestPointDist = searchTerm.distTo(nearestPoints.get(nearestPoints.size() - 1));
+                // Compare the two distances to determine whether we need to check the other branch
+                if (axisDist < lastNearestPointDist) {
+                    // Check other branch for closer points
+                    // TODO: not sure about this (do we just set nearestPoints to equal the return value from the other branch)
+                    nearestPoints = findNearest(otherNode, searchTerm, nearestPoints);
+                }
             }
         }
 
@@ -205,6 +187,7 @@ public class KDTreeNN implements NearestNeigh{
                 }
             }
         }
+        System.out.println("Point not added.");
         return false;
     }
 
@@ -215,9 +198,16 @@ public class KDTreeNN implements NearestNeigh{
      **/
     @Override
     public boolean deletePoint(Point point) {
+
         // Get the node to delete
-        nodeToDelete = getNode(point);
-        if (nodeToDelete == null) return false;
+        KDNode nodeToDelete = getNode(point);
+        if (nodeToDelete == null) {
+            System.out.println("Point not deleted. Point doesn't exist.");
+            return false;
+        }
+
+        // Create null node as setLeft() and setRight() can take node or point
+        KDNode nullNode = null;
 
         // Get the replacement node
         KDNode replacement = getInnerLeaf(nodeToDelete);
@@ -226,9 +216,9 @@ public class KDTreeNN implements NearestNeigh{
             // If the point being deleted is a leaf, just delete the parent's pointer to the point being deleted
             if (nodeToDelete.getParent() != null) {
                 if (nodeToDelete.getDirection() == Direction.LEFT) {
-                    nodeToDelete.getParent().setLeft(null);
+                    nodeToDelete.getParent().setLeft(nullNode);
                 } else {
-                    nodeToDelete.getParent().setRight(null);
+                    nodeToDelete.getParent().setRight(nullNode);
                 }
             }
         } else {
@@ -237,12 +227,13 @@ public class KDTreeNN implements NearestNeigh{
 
             // Remove the replacement node from the leaf
             if (replacement.getDirection() == Direction.LEFT) {
-                replacement.getParent().setLeft(null);
+                replacement.getParent().setLeft(nullNode);
             } else {
-                replacement.getParent().setRight(null);
+                replacement.getParent().setRight(nullNode);
             }
         }
 
+        System.out.println("Point deleted.");
         return true;
     }
 
@@ -301,7 +292,7 @@ public class KDTreeNN implements NearestNeigh{
 
             // Check if the new point is the same as the current point
             if (point.equals(currentPoint)) {
-                return currentPoint;
+                return currentNode;
             }
 
             // Find cutting axis and branch to go down
@@ -364,13 +355,21 @@ public class KDTreeNN implements NearestNeigh{
         // Sort the provided list by distance from searchTerm
         for (int i = 0; i < points.size(); i++) {
             for (int j = 0; j < points.size() - 1; j++) {
-                // Calculate distances of the current point and the next point
-                double pointDist = getDist(searchTerm, points.get(j));
-                double nextPointDist = getDist(searchTerm, points.get(j+1));
-                if (pointDist > nextPointDist) {
+                if (points.get(j+1) == null) {
+                    continue;
+                } else if (points.get(j) == null) {
                     Point temp = points.get(j);
                     points.set(j, points.get(j+1));
                     points.set(j+1, temp);
+                } else {
+                    // Calculate distances of the current point and the next point
+                    double pointDist = searchTerm.distTo(points.get(j));
+                    double nextPointDist = searchTerm.distTo(points.get(j+1));
+                    if (pointDist > nextPointDist) {
+                        Point temp = points.get(j);
+                        points.set(j, points.get(j+1));
+                        points.set(j+1, temp);
+                    }
                 }
             }
         }
@@ -418,6 +417,21 @@ public class KDTreeNN implements NearestNeigh{
             return (root.getLeft() != null) ? getOuterLeaf(root.getLeft(), direction) : getOuterLeaf(root.getRight(), direction);
         } else {
             return (root.getRight() != null) ? getOuterLeaf(root.getRight(), direction) : getOuterLeaf(root.getLeft(), direction);
+        }
+    }
+
+
+    /* ---------- TESTING Methods ---------- */
+
+    private void inorder(){
+        inorder(root);
+        System.out.println("");
+    }
+    private void inorder(KDNode r){
+        if (r != null){
+            inorder(r.getLeft());
+            System.out.print(r.getPoint().id);
+            inorder(r.getRight());
         }
     }
 
