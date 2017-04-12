@@ -133,9 +133,9 @@ public class KDTreeNN implements NearestNeigh{
         nearestPoints = sortNearest(searchTerm, nearestPoints);
 
         // Get the distance from the current point to the search point
-        double currentPointDist = getManhattanDist(currentNode.getPoint(), searchTerm);
+        double currentPointDist = searchTerm.distTo(currentNode.getPoint());
         // Get the distance from the furthest point currently in nearestPoints to the search point
-        double lastNearestPointDist = getManhattanDist(nearestPoints.get(nearestPoints.size() - 1), searchTerm);
+        double lastNearestPointDist = searchTerm.distTo(nearestPoints.get(nearestPoints.size() - 1));
         // If current point is closer, swap it into the nearestPoints list
         if (currentPointDist < lastNearestPointDist) {
             nearestPoints.set(nearestPoints.size() - 1, currentNode.getPoint());
@@ -146,7 +146,7 @@ public class KDTreeNN implements NearestNeigh{
             // Get the distance along the cutting axis from current point to search point
             double axisDist = getAxisDist(currentNode.getPoint(), searchTerm);
             // Get the distance from the furthest point currently in nearestPoints to the search point
-            double lastNearestPointDist = getManhattanDist(nearestPoints.get(nearestPoints.size() - 1), searchTerm);
+            double lastNearestPointDist = searchTerm.distTo(nearestPoints.get(nearestPoints.size() - 1));
             // Compare the two distances to determine whether we need to check the other branch
             if (axisDist < lastNearestPointDist) {
                 // Check other branch for closer points
@@ -172,25 +172,20 @@ public class KDTreeNN implements NearestNeigh{
             Point currentPoint = currentNode.getPoint();
 
             // Check if the new point is the same as the current point
-            if (
-            point.id.equals(currentPoint.id) &&
-            point.cat == currentPoint.cat &&
-            point.lat == currentPoint.lat &&
-            point.lon == currentPoint.lon
-            ) {
+            if (point.equals(currentPoint)) {
                 System.out.println("Point not added. Point already exists.");
                 return false;
             }
 
             // Find cutting axis and branch to go down
-            boolean goLeft;
+            Direction direction;
             if (currentNode.getAxis() == Axis.X) {
-                goLeft = (point.lat <= currentPoint.lat);
+                direction = (point.lat <= currentPoint.lat) ? Direction.LEFT : Direction.RIGHT;
             } else {
-                goLeft = (point.lon <= currentPoint.lon);
+                direction = (point.lon <= currentPoint.lon) ? Direction.LEFT : Direction.RIGHT;
             }
 
-            if (goLeft) {
+            if (direction == Direction.LEFT) {
                 // Determine if we are at a leaf node yet
                 if (currentNode.getLeft() == null) {
                     currentNode.setLeft(point);
@@ -220,77 +215,35 @@ public class KDTreeNN implements NearestNeigh{
      **/
     @Override
     public boolean deletePoint(Point point) {
-        KDNode currentNode = root;
-        KDNode parentNode = null;
-        String direction = null;
+        // Get the node to delete
+        nodeToDelete = getNode(point);
+        if (nodeToDelete == null) return false;
 
-        while (currentNode != null) {
+        // Get the replacement node
+        KDNode replacement = getInnerLeaf(nodeToDelete);
 
-            Point currentPoint = currentNode.getPoint();
-
-            // Check if the new point is the same as the current point
-            if (
-            point.id.equals(currentPoint.id) &&
-            point.cat == currentPoint.cat &&
-            point.lat == currentPoint.lat &&
-            point.lon == currentPoint.lon
-            ) {
-                if (currentNode.getLeft() == null && currentNode.getRight() == null) {
-                    // Node is leaf. Delete parent's pointer to it
-                    if (direction.equals("left")) {
-                        parentNode.setLeft(null);
-                    } else {
-                        parentNode.setRight(null);
-                    }
+        if (replacement == null) {
+            // If the point being deleted is a leaf, just delete the parent's pointer to the point being deleted
+            if (nodeToDelete.getParent() != null) {
+                if (nodeToDelete.getDirection() == Direction.LEFT) {
+                    nodeToDelete.getParent().setLeft(null);
                 } else {
-                    // Node is not leaf. Must replace with inner leaf
-                    KDNode replacement = getInnerLeaf(currentNode, direction);
-                    if (direction.equals("left")) {
-                        parentNode.setLeft(replacement);
-                    } else {
-                        parentNode.setRight(replacement);
-                    }
-                    replacement.setLeft(currentNode.getLeft());
-                    replacement.setRight(currentNode.getRight());
-                    replacement.setAxis(currentNode.getAxis());
-                    replacement.setParent(parentNode);
-                    replacement.setDirection(currentNode.getDirection());
+                    nodeToDelete.getParent().setRight(null);
                 }
-                return true;
             }
+        } else {
+            // Replace currentNode's point with replacement's point
+            nodeToDelete.setPoint(replacement.getPoint());
 
-            // Find cutting axis and branch to go down
-            boolean goLeft;
-            if (currentNode.getAxis() == Axis.X) {
-                goLeft = (point.lat <= currentPoint.lat);
+            // Remove the replacement node from the leaf
+            if (replacement.getDirection() == Direction.LEFT) {
+                replacement.getParent().setLeft(null);
             } else {
-                goLeft = (point.lon <= currentPoint.lon);
-            }
-
-            if (goLeft) {
-                // Determine if we are at a leaf node yet
-                if (currentNode.getLeft() == null) {
-                    System.out.println("Could not delete point, point does not exist.");
-                    return false;
-                } else {
-                    direction = "left";
-                    parentNode = currentNode;
-                    currentNode = currentNode.getLeft();
-                }
-            } else {
-                // Determine if we are at a leaf node yet
-                if (currentNode.getRight() == null) {
-                    System.out.println("Could not delete point, point does not exist.");
-                    return false;
-                } else {
-                    direction = "right";
-                    parentNode = currentNode;
-                    currentNode = currentNode.getRight();
-                }
+                replacement.getParent().setRight(null);
             }
         }
-        System.out.println("Could not delete point, point does not exist.");
-        return false;
+
+        return true;
     }
 
     /**
@@ -307,47 +260,67 @@ public class KDTreeNN implements NearestNeigh{
             Point currentPoint = currentNode.getPoint();
 
             // Check if the new point is the same as the current point
-            if (
-            point.id.equals(currentPoint.id) &&
-            point.cat == currentPoint.cat &&
-            point.lat == currentPoint.lat &&
-            point.lon == currentPoint.lon
-            ) {
+            if (point.equals(currentPoint)) {
                 System.out.println("Found point in tree");
                 return true;
             }
 
             // Find cutting axis and branch to go down
-            boolean goLeft;
+            Direction direction;
             if (currentNode.getAxis() == Axis.X) {
-                goLeft = (point.lat <= currentPoint.lat);
+                direction = (point.lat <= currentPoint.lat) ? Direction.LEFT : Direction.RIGHT;
             } else {
-                goLeft = (point.lon <= currentPoint.lon);
+                direction = (point.lon <= currentPoint.lon) ? Direction.LEFT : Direction.RIGHT;
             }
 
-            if (goLeft) {
-                // Determine if we are at a leaf node yet
-                if (currentNode.getLeft() == null) {
-                    System.out.println("Point not found in tree");
-                    return false;
-                } else {
-                    currentNode = currentNode.getLeft();
-                }
-            } else {
-                // Determine if we are at a leaf node yet
-                if (currentNode.getRight() == null) {
-                    System.out.println("Point not found in tree");
-                    return false;
-                } else {
-                    currentNode = currentNode.getRight();
-                }
+            currentNode = (direction == Direction.LEFT) ? currentNode.getLeft() : currentNode.getRight();
+
+            if (currentNode == null) {
+                System.out.println("Point not found in tree");
+                return false;
             }
+
         }
         System.out.println("Point not found in tree");
         return false;
     }
 
     /* ---------- Private Methods ---------- */
+
+    /**
+     * @description returns a node with a specific point
+     * @param point the point to find
+     * @return KDNode the node containing the point
+     **/
+    private KDNode getNode(Point point) {
+        KDNode currentNode = root;
+
+        while (currentNode != null) {
+
+            Point currentPoint = currentNode.getPoint();
+
+            // Check if the new point is the same as the current point
+            if (point.equals(currentPoint)) {
+                return currentPoint;
+            }
+
+            // Find cutting axis and branch to go down
+            Direction direction;
+            if (currentNode.getAxis() == Axis.X) {
+                direction = (point.lat <= currentPoint.lat) ? Direction.LEFT : Direction.RIGHT;
+            } else {
+                direction = (point.lon <= currentPoint.lon) ? Direction.LEFT : Direction.RIGHT;
+            }
+
+            currentNode = (direction == Direction.LEFT) ? currentNode.getLeft() : currentNode.getRight();
+
+            if (currentNode == null) {
+                return null;
+            }
+
+        }
+        return null;
+    }
 
     /**
      * @description sort the list of points using bubble sort
@@ -384,74 +357,7 @@ public class KDTreeNN implements NearestNeigh{
 
         }
 
-        /*
-        Field dir = null;
-        try {
-            if (axis == Axis.X) {
-                dir = Class.forName("nearestNeigh.Point").getField("lat");
-            } else if (axis == Axis.Y) {
-                dir = Class.forName("nearestNeigh.Point").getField("lon");
-            }
-        } catch (Exception e) {
-            System.out.println(e);
-        }
-
-        // Sort the provided list by latitude
-        for (int i = 0; i < points.size(); i++) {
-            try {
-                for (int j = 0; j < points.size() - 1; j++) {
-                    if ((double) dir.get(points.get(j)) > (double) dir.get(points.get(j+1))) {
-                        Point temp = points.get(j);
-                        points.set(j, points.get(j+1));
-                        points.set(j+1, temp);
-                    }
-                }
-            } catch (Exception e) {
-                System.out.println(e);
-            }
-        }
-        */
-
         return points;
-    }
-
-    /**
-     * @description Find the nearest leaf (first step of search)
-     * @param searchTerm the point to find nearest leaf to
-     * @return KDNode The nearest leaf node
-     **/
-    private KDNode getNearestLeaf(Point searchTerm)
-    {
-        KDNode currentNode = root;
-
-        while (currentNode != null) {
-
-            Point currentPoint = currentNode.getPoint();
-
-            // Find cutting axis and branch to go down
-            boolean goLeft;
-            if (currentNode.getAxis() == Axis.X) {
-                goLeft = (searchTerm.lat <= currentPoint.lat);
-            } else {
-                goLeft = (searchTerm.lon <= currentPoint.lon);
-            }
-
-            if (goLeft) {
-                // Determine if we are at a leaf node yet
-                if (currentNode.getLeft() == null) {
-                    return currentNode;
-                } else {
-                    currentNode = currentNode.getLeft();
-                }
-            } else {
-                // Determine if we are at a leaf node yet
-                if (currentNode.getRight() == null) {
-                    return currentNode;
-                } else {
-                    currentNode = currentNode.getRight();
-                }
-            }
-        }
     }
 
     private ArrayList<Point> sortNearest(Point searchTerm, ArrayList<Point> points) {
@@ -471,10 +377,6 @@ public class KDTreeNN implements NearestNeigh{
         return points;
     }
 
-    private double getManhattanDist(Point p1, Point p2) {
-        return Math.abs(p1.lat - p2.lat) + Math.abs(p1.lon - p2.lon);
-    }
-
     private double getAxisDist(Point p, KDNode n) {
         if (n.getAxis() == Axis.X) {
             return Math.abs(p.lat - n.getPoint().lat);
@@ -484,83 +386,39 @@ public class KDTreeNN implements NearestNeigh{
     }
 
     /**
-     * @description get one of the two inner-leafs from the tree where
-     * the node provided is the root
-     * @param root the root of the tree to get the leaf of
-     * @return KDNode one of the two inner-leafs of the tree
+     * @description get an inner-leaf of the tree
+     * @param root the root of the tree
+     * @return KDNode teh leaf node
      **/
-    private KDNode getInnerLeaf(KDNode root, String direction) {
-        String rootDirection;
-        KDNode currentNode;
-        KDNode parentNode = null;
-        String parentDirection;
-
+    private KDNode getInnerLeaf(KDNode root) {
         if (root.getLeft() != null) {
-            rootDirection = "left";
-            currentNode = root.getLeft();
+            return getOuterLeaf(root.getLeft(), Direction.RIGHT);
         } else if (root.getRight() != null) {
-            rootDirection = "right";
-            currentNode = root.getRight();
+            return getOuterLeaf(root.getRight(), Direction.LEFT);
         } else {
-            // Delete the pointer to currentNode from parentNode
-            if (direction.equals("right")) {
-                root.getParent().setRight(null);
-            } else {
-                root.getParent().setLeft(null);
-            }
             return null;
         }
+    }
 
-        // Keep going down the tree until we reach the leaf
-        while (currentNode != null) {
-            // If root direction was left, we always go right and vice-versa
-            if (rootDirection.equals("left")) {
-                // If currentNode has a right branch, go down it, else check left branch
-                if (currentNode.getRight() != null) {
-                    parentNode = currentNode;
-                    parentDirection = "right";
-                    currentNode = currentNode.getRight();
-                } else {
-                    // If currentNode has a left branch, go down it, else we are at the target leaf
-                    if (currentNode.getLeft() != null) {
-                        parentNode = currentNode;
-                        parentDirection = "left";
-                        currentNode = currentNode.getLeft();
-                    } else {
-                        // Delete the pointer to currentNode from parentNode
-                        if (parentDirection.equals("right")) {
-                            parentNode.setRight(null);
-                        } else {
-                            parentNode.setLeft(null);
-                        }
-                        return currentNode;
-                    }
-                }
-            } else {
-                // If currentNode has a left branch, go down it, else check right branch
-                if (currentNode.getLeft() != null) {
-                    parentNode = currentNode;
-                    parentDirection = "left";
-                    currentNode = currentNode.getLeft();
-                } else {
-                    // If currentNode has a right branch, go down it, else we are at the target leaf
-                    if (currentNode.getRight() != null) {
-                        parentNode = currentNode;
-                        parentDirection = "right";
-                        currentNode = currentNode.getRight();
-                    } else {
-                        // Delete the pointer to currentNode from parentNode
-                        if (parentDirection.equals("right")) {
-                            parentNode.setRight(null);
-                        } else {
-                            parentNode.setLeft(null);
-                        }
-                        return currentNode;
-                    }
-                }
-            }
+    /**
+     * @description get the right-most leaf of the current tree
+     * @param root the root of the tree
+     * @param direction which outer leaf to get
+     * @return KDNode the leaf node
+     **/
+    private KDNode getOuterLeaf(KDNode root, Direction direction) {
+
+        // Check if we are at leaf
+        if (root.getLeft() == null && root.getRight() == null) {
+            return root;
         }
 
+        // Determine which branch to go down
+        if (direction == Direction.LEFT) {
+            return (root.getLeft() != null) ? getOuterLeaf(root.getLeft(), direction) : getOuterLeaf(root.getRight(), direction);
+        } else {
+            return (root.getRight() != null) ? getOuterLeaf(root.getRight(), direction) : getOuterLeaf(root.getLeft(), direction);
+        }
     }
 
 }
