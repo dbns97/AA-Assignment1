@@ -14,7 +14,8 @@ import nearestNeigh.NearestNeigh;
  *
  * @author Jeffrey, Youhan
  */
-public class testTimes {
+public class testTimes
+{
 
 
     /**
@@ -25,7 +26,8 @@ public class testTimes {
     /**
      * Print help/usage message.
      */
-    public static void usage(String progName) {
+    public static void usage(String progName)
+    {
         System.err.println(progName + ": <approach> [data fileName] [command fileName] [output fileName]");
         System.err.println("<approach> = <naive | kdtree>");
         System.exit(1);
@@ -41,14 +43,16 @@ public class testTimes {
       long startTime = System.nanoTime ( ) ;
 
         // read command line arguments
-        if (args.length != 4) {
+        if (args.length != 4)
+        {
             System.err.println("Incorrect number of arguments.");
             usage(progName);
         }
 
         // initialise search agent
         NearestNeigh agent = null;
-        switch (args[0]) {
+        switch (args[0])
+        {
             case "naive":
                 agent = new NaiveNN();
                 break;
@@ -63,10 +67,12 @@ public class testTimes {
         // read in data file of initial set of points
         String dataFileName = args[1];
         List<Point> points = new ArrayList<Point>();
-        try {
+        try
+        {
             File dataFile = new File(dataFileName);
             Scanner scanner = new Scanner(dataFile);
-            while (scanner.hasNext()) {
+            while (scanner.hasNext())
+            {
                 String id = scanner.next();
                 Category cat = Point.parseCat(scanner.next());
                 Point point = new Point(id, cat, scanner.nextDouble(), scanner.nextDouble());
@@ -74,7 +80,9 @@ public class testTimes {
             }
             scanner.close();
             agent.buildIndex(points);
-        } catch (FileNotFoundException e) {
+        }
+        catch (FileNotFoundException e)
+        {
             System.err.println("Data file doesn't exist.");
             usage(progName);
         }
@@ -84,13 +92,19 @@ public class testTimes {
         File commandFile = new File(commandFileName);
         File outputFile = new File(outputFileName);
 
+        File timeTakenFile = new File("../testing/timeTakenFile.out");
+
         // parse the commands in commandFile
-        try {
+        try
+        {
             Scanner scanner = new Scanner(commandFile);
             PrintWriter writer = new PrintWriter(outputFile);
 
+            PrintWriter timeWriter = new PrintWriter(timeTakenFile);
+
             // operating commands
-            while (scanner.hasNext()) {
+            while (scanner.hasNext())
+            {
                 String command = scanner.next();
                 String id;
                 Category cat;
@@ -100,7 +114,8 @@ public class testTimes {
                 double lon;
                 int k;
                 Point point;
-                switch (command) {
+                switch (command)
+                {
                     // search
                     case "S":
                         cat = Point.parseCat(scanner.next());
@@ -109,9 +124,20 @@ public class testTimes {
                         k = scanner.nextInt();
                         point = new Point("searchTerm", cat, lat, lon);
                         List<Point> searchResult = agent.search(point, k);
+
+                        long startSearchTime = System.nanoTime();
+
                         for (Point writePoint : searchResult) {
                             writer.println(writePoint.toString());
                         }
+
+                        long endSearchTime = System.nanoTime();
+                        double estimatedSearchTime = ((double)(endSearchTime - startSearchTime)) / Math.pow(10, 9);
+                        System.out.println("search time taken = " + estimatedSearchTime + " sec");
+
+                        timeWriter.println("search time taken = " + estimatedSearchTime + " sec");
+
+
                         break;
                     // add
                     case "A":
@@ -120,9 +146,19 @@ public class testTimes {
                         lat = scanner.nextDouble();
                         lon = scanner.nextDouble();
                         point = new Point(id, cat, lat, lon);
+
+                        long startAddTime = System.nanoTime();
+
                         if (!agent.addPoint(point)) {
                             writer.println("Add point failed.");
                         }
+
+                        long endAddTime = System.nanoTime();
+                        double estimatedAddTime = ((double)(endAddTime - startAddTime)) / Math.pow(10, 9);
+                        System.out.println("add time taken = " + estimatedAddTime + " sec");
+
+                        timeWriter.println("add time taken = " + estimatedAddTime + " sec");
+
                         break;
                     // delete
                     case "D":
@@ -131,9 +167,19 @@ public class testTimes {
                         lat = scanner.nextDouble();
                         lon = scanner.nextDouble();
                         point = new Point(id, cat, lat, lon);
+
+                        long startDeleteTime = System.nanoTime();
+
                         if (!agent.deletePoint(point)) {
                             writer.println("Delete point failed.");
                         }
+
+                        long endDeleteTime = System.nanoTime();
+                        double estimatedDeleteTime = ((double)(endDeleteTime - startDeleteTime)) / Math.pow(10, 9);
+                        System.out.println("delete time taken = " + estimatedDeleteTime + " sec");
+
+                        timeWriter.println("delete time taken = " + estimatedDeleteTime + " sec");
+
                         break;
                     // check
                     case "C":
@@ -142,7 +188,17 @@ public class testTimes {
                         lat = scanner.nextDouble();
                         lon = scanner.nextDouble();
                         point = new Point(id, cat, lat, lon);
+
+                        long startCheckTime = System.nanoTime();
+
                         writer.println(agent.isPointIn(point));
+
+                        long endCheckTime = System.nanoTime();
+                        double estimatedCheckTime = ((double)(endCheckTime - startCheckTime)) / Math.pow(10, 9);
+                        System.out.println("check time taken = " + estimatedCheckTime + " sec");
+
+                        timeWriter.println("check time taken = " + estimatedCheckTime + " sec");
+
                         break;
                     default:
                         System.err.println("Unknown command.");
@@ -151,16 +207,24 @@ public class testTimes {
             }
             scanner.close();
             writer.close();
-        } catch (FileNotFoundException e) {
+
+            // end time of programe
+            long endTime = System.nanoTime();
+
+            double estimatedTime = ((double)(endTime - startTime)) / Math.pow(10, 9);
+            System.out.println("Total time taken = " + estimatedTime + " sec");
+
+            timeWriter.println("Total time taken = " + estimatedTime + " sec");
+
+            timeWriter.close();
+        }
+        catch (FileNotFoundException e)
+        {
             System.err.println("Command file doesn't exist.");
             usage(progName);
         }
 
-        // end time of programe
-        long endTime = System.nanoTime();
 
-        double estimatedTime = ((double)(endTime - startTime)) / Math.pow(10, 9);
-        System.out.println("time taken = " + estimatedTime + " sec");
 
     }
 }
