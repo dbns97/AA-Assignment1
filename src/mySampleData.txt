@@ -1,7 +1,0 @@
-id0 restaurant 37 148
-id1 restaurant 38 146
-id2 restaurant 39 147
-id3 restaurant 40 150
-id4 restaurant 41 140
-id5 restaurant 36 141
-id6 restaurant 42 143
