@@ -18,8 +18,8 @@ D id12 education 109 25
 D id14 education 106 85
 D id16 education 23 127
 D id18 education 1 119
-S id20 education 0 85 10
-S id22 education 28 36 10
-S id24 education 148 130 10
-S id26 education 41 12 10
-S id28 education 21 23 10
+S education 0 85 10
+S education 28 36 10
+S education 148 130 10
+S education 41 12 10
+S education 21 23 10

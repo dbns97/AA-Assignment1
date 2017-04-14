@@ -1798,8 +1798,8 @@ D id1792 education 53 28
 D id1794 education 56 126
 D id1796 education 124 11
 D id1798 education 134 113
-S id1800 education 53 138 10
-S id1802 education 40 95 10
-S id1804 education 26 41 10
-S id1806 education 15 57 10
-S id1808 education 61 116 10
+S education 53 138 10
+S education 40 95 10
+S education 26 41 10
+S education 15 57 10
+S education 61 116 10

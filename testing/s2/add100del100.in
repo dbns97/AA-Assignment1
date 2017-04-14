@@ -198,8 +198,8 @@ D id192 education 24 24
 D id194 education 93 88
 D id196 education 63 145
 D id198 education 94 74
-S id200 education 140 75
-S id202 education 63 74
-S id204 education 48 31
-S id206 education 81 134
-S id208 education 99 98
+S education 140 75 10
+S education 63 74 10
+S education 48 31 10
+S education 81 134 10
+S education 99 98 10

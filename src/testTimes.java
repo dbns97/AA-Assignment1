@@ -116,8 +116,8 @@ public class testTimes
                 int k;
                 Point point;
 
-System.out.println(debug);
-debug++;
+//System.out.println(debug);
+//debug++;
 
                 switch (command)
                 {
@@ -159,9 +159,9 @@ debug++;
 
                         long endAddTime = System.nanoTime();
                         double estimatedAddTime = ((double)(endAddTime - startAddTime)) / Math.pow(10, 9);
-                        System.out.println("add time taken = " + estimatedAddTime + " sec");
+                        //System.out.println("add time taken = " + estimatedAddTime + " sec");
 
-                        timeWriter.println("add time taken = " + estimatedAddTime + " sec");
+                        timeWriter.println(estimatedAddTime);
                         count++;
                         break;
                     // delete
@@ -180,9 +180,9 @@ debug++;
 
                         long endDeleteTime = System.nanoTime();
                         double estimatedDeleteTime = ((double)(endDeleteTime - startDeleteTime)) / Math.pow(10, 9);
-                        System.out.println("delete time taken = " + estimatedDeleteTime + " sec");
+                        //System.out.println("delete time taken = " + estimatedDeleteTime + " sec");
 
-                        timeWriter.println("delete time taken = " + estimatedDeleteTime + " sec");
+                        timeWriter.println(estimatedDeleteTime);
                         count++;
                         break;
                     // check
@@ -199,9 +199,9 @@ debug++;
 
                         long endCheckTime = System.nanoTime();
                         double estimatedCheckTime = ((double)(endCheckTime - startCheckTime)) / Math.pow(10, 9);
-                        System.out.println("check time taken = " + estimatedCheckTime + " sec");
+                        //System.out.println("check time taken = " + estimatedCheckTime + " sec");
 
-                        timeWriter.println("check time taken = " + estimatedCheckTime + " sec");
+                        timeWriter.println(estimatedCheckTime);
                         count++;
                         break;
                     default:
